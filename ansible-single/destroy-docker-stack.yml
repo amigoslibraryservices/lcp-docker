@@ -1,0 +1,78 @@
+---
+# Ansible playbook to destroy MySQL/MariaDB server resources
+# in a Docker container
+
+- name: Remove the demo LCP stack resources
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+
+  tasks:
+# Do I need a human confirmation before proceeding?
+
+# Manual shutdown/remove if compose task below doesn't work
+#    - name: Remove the LCP containers
+#      docker_container:
+#        name: "docker_{{ item }}_1"
+#        state: absent
+#      loop:
+#        - lcpserver
+#        - lcpencrypt
+#        - lsdserver
+#        - testfrontend
+#        - sftp
+
+    - name: Remove allocated Docker resources from the compose file
+      docker_compose:
+        project_src: "{{ docker_host_lcp_home }}/docker"
+        state: absent
+
+    - name: Remove the MariaDB-MySQL container
+      docker_container:
+        name: "database"
+        state: absent
+  
+    - name: Remove images related to the stack
+      docker_image:
+        state: absent
+        name: "{{ item.name }}"
+        tag: "{{ item.tag }}"
+      loop:
+        - name: readium/testfrontend
+          tag: working
+        - name: readium/lsdserver
+          tag: working
+        - name: readium/lcpserver
+          tag: working
+        - name: readium/lcpencrypt
+          tag: working
+        - name: atmoz/sftp
+          tag: alpine
+        - name: mariadb
+          tag: latest
+
+    - name: Remove the data-file volumes
+      docker_volume:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - lcp_dbdata
+        - docker_lcp_encfiles
+        - docker_lcp_rawfiles
+
+    - name: Remove temp directories
+      file:
+        path: "{{ docker_host_lcp_home }}/{{ item }}"
+        state: absent
+      loop:
+        - db
+        - sftp
+        - docker
+
+    - name: Remove host LCP directory
+      file:
+        path: "{{ docker_host_lcp_home }}"
+        state: absent

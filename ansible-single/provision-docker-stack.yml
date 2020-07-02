@@ -1,0 +1,204 @@
+---
+# Ansible playbook to set up simple MySQL/MariaDB server
+# in a Docker container to support the demo LCP encryption
+# service.
+
+- name: Play 1. Deploy Docker instance for LCP demo stack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+
+  tasks:
+    # It would be handy to abstract this so that a variable
+    # determines whether the deployment would be to a local
+    # VM, a Linode VPS, or an AWS instance. This play may
+    # not be needed for a local or local VM deployment (the 
+    # latter handled perhaps by Vagrant).
+
+    # The variable could be passed as a CLI parameter to the
+    # ansible-playbook command to specify the main filename.
+
+  - name: Test whether play should be skipped
+    meta: end_play
+    when: hosting_type == "local" or hosting_type == "local_vm"
+
+    # In any case, the requirements should include a couple
+    # of vCPUs and 8GB RAM minimum.
+
+#    - name: Create new single-instance host for Docker containers
+
+    # Add Docker and any utilities to host OS; this could
+    # be a task set as an `include_role`
+#    - name: Configure host with requirements utilities (Docker, etc.)
+#      include_role:
+
+    # Should we create the Docker volumes here? Or let
+    # the container definitions take care of it?
+
+
+- name: Play 2. Deploy MySQL service as Docker container for LCP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+
+  tasks:
+    - name: Create a MySQL/MariaDB container
+      docker_container:
+        name: database
+        image: "mariadb:latest"
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ mysql_external_port }}:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+        volumes:
+          - "lcp_dbdata:/var/lib/mysql"
+      register: mydb_results
+
+#    - name: Store MySQL container IP address
+#      set_fact:
+#        db_container_ip: "{{ mydb_results.container.NetworkSettings.IPAddress }}"
+
+    # Test for MySQL service being available; first step security: remove anonymous users
+    - name: Remove anonymous user accounts
+      mysql_user:
+        name: ''
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ mysql_external_port }}"
+        state: absent
+      register: remove_user
+      until: remove_user is succeeded
+      retries: 30
+      delay: 10
+
+    # Prepare MySQL service for LCP install
+
+    - name: Create a host directory to store the LCP sql import files
+      file:
+        path: "{{ docker_host_lcp_home }}/db"
+        state: directory
+        mode: '0750'
+
+    # Copy latest database dump files to remote host (initially with root)
+    - name: Download LCP server schema files to remote host
+      get_url:
+        url: "https://raw.githubusercontent.com/readium/readium-lcp-server/master/dbmodel/{{ item }}"
+        dest: "{{ docker_host_lcp_home }}/db/{{ item }}"
+        mode: '0440'
+      loop:
+        - "mysql_db_setup_lcpserver.sql"
+        - "mysql_db_setup_lsdserver.sql"
+        - "mysql_db_setup_frontend.sql"
+
+    - name: Ingest/Restore initial LCP databases to server
+      delegate_to: localhost
+      mysql_db:
+        name: "{{ item.db_name }}"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ mysql_external_port }}"
+        state: import
+        target: "{{ docker_host_lcp_home }}/db/{{ item.sql_file }}"
+      loop:
+        - db_name: "lcpserver"
+          sql_file: "mysql_db_setup_lcpserver.sql"
+        - db_name: "lsdserver"
+          sql_file: "mysql_db_setup_lsdserver.sql"
+        - db_name: "testfrontend"
+          sql_file: "mysql_db_setup_frontend.sql"
+      register: db_results
+      failed_when: '"FAILED" in db_results.msg and "already exists" not in db_results.msg'
+
+    - name: Create database user with all database permissions for LCP databases
+      mysql_user:
+        name: "{{ item.user_name }}"
+        password: "{{ item.user_password }}"
+        # To allow access from the Docker host and external hosts, as
+        # well as the Docker network itself, use the 'all hosts' wildcard
+        host: "%"
+        priv: "{{ item.db_name }}.*:ALL"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ mysql_external_port }}"
+        state: present
+      loop:
+        - db_name: "lcpserver"
+          user_name: "{{ lcpserver_db_user }}"
+          user_password: "{{ lcpserver_db_user_password }}"
+        - db_name: "lsdserver"
+          user_name: "{{ lsdserver_db_user }}"
+          user_password: "{{ lsdserver_db_user_password }}"
+        - db_name: "testfrontend"
+          user_name: "{{ frontend_db_user }}"
+          user_password: "{{ frontend_db_user_password }}"
+
+
+- name: Play 3. Deploy LCP service stack via Docker Compose
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+
+  tasks:
+    - name: Create a remote directory to store the SFTP config files
+      file:
+        path: "{{ docker_host_lcp_home }}/sftp"
+        state: directory
+        mode: '0750'
+
+    - name: Copy the SFTP sample users config file to remote
+      copy:
+        src: files/users.conf
+        dest: "{{ docker_host_lcp_home }}/sftp"
+  
+    - name: Create a remote directory to store the LCP Docker build files
+      file:
+        path: "{{ docker_host_lcp_home }}/docker"
+        state: directory
+        mode: '0750'
+
+    - name: Copy an LCP container etc directory to remote
+      copy:
+        src: files/etc
+        dest: "{{ docker_host_lcp_home }}/docker/"
+
+    - name: Customize the LCP config file and copy to remote host
+      template:
+        src: "templates/config.yaml.{{ storage_mode }}.j2"
+        dest: "{{ docker_host_lcp_home }}/docker/etc/config.yaml"
+  
+    - name: Customize the encrypt watchdog tricks file and copy to remote host
+      template:
+        src: "templates/watcher.yaml.j2"
+        dest: "{{ docker_host_lcp_home }}/docker/etc/watcher.yaml"
+  
+    - name: Customize the Docker build file and copy to remote host
+      template:
+        src: "templates/Dockerfile.j2"
+        dest: "{{ docker_host_lcp_home }}/docker/Dockerfile"
+
+    - name: Customize the docker-compose file and copy to remote host
+      template:
+        src: "templates/docker-compose.yaml.j2"
+        dest: "{{ docker_host_lcp_home }}/docker/docker-compose.yaml"
+
+    - name: Create and start LCP services
+      docker_compose:
+        project_src: "{{ docker_host_lcp_home }}/docker"
+      register: output
+
+    - debug:
+        var: output

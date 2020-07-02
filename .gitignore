@@ -1,0 +1,7 @@
+docker-compose.yaml
+config.yaml
+local_deploy.yml
+*.retry
+test*
+notes*
+issues*

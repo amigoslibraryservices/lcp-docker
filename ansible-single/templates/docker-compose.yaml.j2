@@ -1,0 +1,53 @@
+version: '3.6'
+services:
+
+    sftp:
+        image: "atmoz/sftp:alpine"
+        ports:
+          - "8922:22"
+        restart: unless-stopped
+        volumes:
+          - "{{ docker_host_lcp_home }}/sftp/users.conf:/etc/sftp/users.conf:ro"
+          - "lcp_rawfiles:/home"
+
+    lcpencrypt:
+        image: "readium/lcpencrypt:working"
+        build:
+            context: .
+            target: "lcpencrypt"
+        volumes:
+          - "lcp_encfiles:{{ encrypted_repository }}"
+          - "lcp_rawfiles:{{ master_repository }}"
+
+    lcpserver:
+        image: "readium/lcpserver:working"
+        build:
+            context: .
+            target: "lcpserver"
+        ports:
+          - "8989:8989"
+        volumes:
+          - "lcp_encfiles:{{ encrypted_repository }}"
+
+    lsdserver:
+        image: "readium/lsdserver:working"
+        build:
+            context: .
+            target: "lsdserver"
+        ports:
+          - "8990:8990"
+
+    testfrontend:
+        image: "readium/testfrontend:working"
+        build:
+            context: .
+            target: "testfrontend"
+        ports:
+          - "8991:8991"
+        volumes:
+          - "lcp_encfiles:{{ encrypted_repository }}"
+          - "lcp_rawfiles:{{ master_repository }}"
+
+volumes:
+    lcp_encfiles:
+    lcp_rawfiles:
