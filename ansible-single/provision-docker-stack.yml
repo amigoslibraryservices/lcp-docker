@@ -12,34 +12,69 @@
     - "vars/{{ varfile }}.yml"
 
   tasks:
-    # It would be handy to abstract this so that a variable
-    # determines whether the deployment would be to a local
-    # VM, a Linode VPS, or an AWS instance. This play may
-    # not be needed for a local or local VM deployment (the 
-    # latter handled perhaps by Vagrant).
-
-    # The variable could be passed as a CLI parameter to the
-    # ansible-playbook command to specify the main filename.
+    # A variable in the specified 'varfile' determines whether the
+    # deployment would be to a local VM, a Linode VPS, or an AWS
+    # instance. This play will be skipped for a local or local VM 
+    # deployment (the latter handled perhaps by Vagrant).
 
   - name: Test whether play should be skipped
     meta: end_play
     when: hosting_type == "local" or hosting_type == "local_vm"
 
     # In any case, the requirements should include a couple
-    # of vCPUs and 8GB RAM minimum.
+    # of vCPUs or cores and 8GB RAM minimum.
 
-#    - name: Create new single-instance host for Docker containers
-
-    # Add Docker and any utilities to host OS; this could
-    # be a task set as an `include_role`
-#    - name: Configure host with requirements utilities (Docker, etc.)
-#      include_role:
+    # TODO: Pull in role (include_role) to create Docker-based host for
+    # the additional plays, if not a local deployment
+    # - name: Configure host with requirements utilities (Docker, etc.)
+    #   include_role:
+    #     name:
 
     # Should we create the Docker volumes here? Or let
     # the container definitions take care of it?
 
+- name: Play 2. Deploy an S3 bucket as the encrypted repository if S3 storage selected
+  hosts: localhost
+  connection: local
+  gather_facts: false
 
-- name: Play 2. Deploy MySQL service as Docker container for LCP
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+    - "vars/s3_iam_user.yml"
+
+  tasks:
+    - name: Test whether S3 user/content needs to be created
+      meta: end_play
+      when: storage_mode == "fs"
+
+    - name: Create IAM user for LCP License Server to write encrypted files to S3
+      include_role: 
+        name: create_iam_user
+      when: (iam_user_key is not defined) or (iam_user_key|length == 0)
+
+    - name: Create S3 storage bucket with public read-only policy
+      s3_bucket:
+        region: "{{ aws_region }}"
+        name: "{{ s3_content_bucket_name }}"
+        policy: "{{ lookup('template', 'templates/s3-public-read-access.json.j2') }}"
+
+    - name: Create IAM group S3 bucket/folder access policy
+      iam_managed_policy:
+        policy_name: "{{ s3_storage_policy_name }}"
+        policy_description: "{{ s3_storage_policy_description }}"
+        policy: "{{ lookup('template', 'templates/s3-group-access-policy.json.j2') }}"
+        state: present
+      register: policy_result
+
+    - name: Create a group with the S3 IAM managed policy attached; add the IAM user
+      iam_group:
+        name: "{{ s3_storage_user_group_name }}"
+        managed_policy: "{{ policy_result.policy.arn }}"
+        users:
+        - "{{ iam_user_name }}"
+        state: present
+
+- name: Play 3. Deploy MySQL service as Docker container for LCP
   hosts: localhost
   connection: local
   gather_facts: false
@@ -143,14 +178,14 @@
           user_name: "{{ frontend_db_user }}"
           user_password: "{{ frontend_db_user_password }}"
 
-
-- name: Play 3. Deploy LCP service stack via Docker Compose
+- name: Play 4. Deploy LCP service stack via Docker Compose
   hosts: localhost
   connection: local
   gather_facts: false
 
   vars_files:
     - "vars/{{ varfile }}.yml"
+    - "vars/s3_iam_user.yml"
 
   tasks:
     - name: Create a remote directory to store the SFTP config files

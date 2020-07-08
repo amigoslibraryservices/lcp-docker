@@ -1,0 +1,39 @@
+# Test IAM user's limited access to S3 bucket
+
+- name: Test IAM programmatic user access to bucket
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+    - "vars/{{ varfile }}.yml"
+    - "vars/s3_iam_user.yml"
+
+  tasks:
+    # This task tests write access (PUT) to the bucket by the user
+    # (success is the task completes; review the S3 bucket)
+    - name: Test user access for adding content to bucket
+      aws_s3:
+        aws_access_key: "{{ iam_user_key }}"
+        aws_secret_key: "{{ iam_user_secret }}"
+        region: "{{ aws_region }}"
+        bucket: "{{ s3_content_bucket_name }}"
+        object: /tryone.txt
+        src: files/tryone.txt
+        mode: put
+
+    # Adding this file tests two aspects of the file store
+    #   - whether "sub-directories" can be added as needed
+    #       (success is the task completes; review the S3 bucket)
+    #   - whether the "sub-directory" can be listed (desired - no listing)
+    #       (success is if the directory download is an empty file
+    #       https://<bucket-name>.s3.<region>.amazonaws.com/contents/)
+    - name: Test user access when adding "sub-folder" content to bucket
+      aws_s3:
+        aws_access_key: "{{ iam_user_key }}"
+        aws_secret_key: "{{ iam_user_secret }}"
+        region: "{{ aws_region }}"
+        bucket: "{{ s3_content_bucket_name }}"
+        object: /contents/tryone2.txt
+        src: files/tryone2.txt
+        mode: put

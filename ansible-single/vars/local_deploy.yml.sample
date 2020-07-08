@@ -1,5 +1,6 @@
 ---
 # Variables for local LCP demo
+
 hosting_type: "local"
 # Change the following IP to reflect the IP of the Docker host
 # In future updates, we'll make this a variable as well
@@ -7,38 +8,42 @@ docker_host_ip: "192.168.1.253"
 docker_host_lcp_home: "/opt/readium"
 
 # MySQL service
-mysql_host: "192.168.1.253"
+mysql_host: "{{ docker_host_ip }}"
 mysql_external_port: 3316
 mysql_root_password: "secretpassword"
 
 # LCP Storage values
-# TODO: Currently, the filesystem version works; s3 needs more work 
-# before testing
-storage_mode: "fs"    # Possible values: 's3', 'fs'
+# Only options are s3 (AWS S3) or fs (local filesystem)
+storage_mode: "fs"
 
 # For local storage:
 encrypted_repository: "{{ docker_host_lcp_home }}/files/encrypted"
 master_repository: "{{ docker_host_lcp_home }}/files/raw"
         
-# For AWS S3:
+# For AWS S3 and IAM user and group creation roles:
 aws_region: "us-east-1"
-s3_encrypt_repo_name: "amg-se-content-lcp"
-# If needed/desired
-s3_access_id: ""
-s3_access_secret: ""
+project_prefix: "CHANGE-"
+bucket_name_proper: "ebook-files"
+s3_content_bucket_name: "{{ project_prefix }}{{ bucket_name_proper }}"
 
+iam_user_name: "lcpserver1"
+iam_user_credentials_file: "vars/s3_iam_user.yml"
+s3_storage_user_group_name: "lcpcontent"
+s3_storage_policy_name: "lcp-content-encrypt"
+s3_storage_policy_description: "Write access policy to S3 bucket for LCP License Server"
+s3_storage_policy_file: "{{ s3_storage_policy_name }}.json"
 
 # LCP Encrypt Service values
 
 # LCP Service values
-lcp_server_host: "http://192.168.1.253:8989"
+lcp_server_host: "http://{{ docker_host_ip }}:8989"
 lcpserver_db_user: "lcpserver_user"
 lcpserver_db_user_password: "secretpassword"
 lcp_auth_user: "lcp"
 lcp_auth_user_password: "secretpassword"
 
 # LSD Service values
-lsd_server_host: "http://192.168.1.253:8990"
+lsd_server_host: "http://{{ docker_host_ip }}:8990"
 lsdserver_db_user: "lsdserver_user"
 lsdserver_db_user_password: "secretpassword"
 allow_renewals: true
@@ -47,7 +52,7 @@ loan_period: 60
 renewal_period: 7
 
 # Front-end Service values
-frontend_server_host: "http://192.168.1.253:8991"
+frontend_server_host: "http://{{ docker_host_ip }}:8991"
 frontend_db_user: "frontend_user"
 frontend_db_user_password: "secretpassword"
 max_prints_allowed: 10

@@ -36,10 +36,10 @@ lcp:
     auth_file: "/etc/readium/htpasswd"
 storage:
     mode: "s3"
-    bucket: "{{ s3_encrypt_repo_name }}"
+    bucket: "{{ s3_content_bucket_name }}"
     region: "{{ aws_region }}"
-    access_id: "{{ s3_access_id }}"
-    secret: "{{ s3_access_id_secret }}"
+    access_id: "{{ iam_user_key }}"
+    secret: "{{ iam_user_secret }}"
 certificate:
     cert: "/etc/readium/certificate.pub"
     private_key: "/etc/readium/certificate.pem"
@@ -47,7 +47,7 @@ license:
     links:
         status: "{{ lsd_server_host }}/licenses/{license_id}/status"
         hint: "{{ frontend_server_host }}/static/hint.html"
-        publication: "https://{{ s3_encrypt_repo_name }}.s3.{{ aws_region }}.amazonaws.com/{publication_id}"
+        publication: "https://{{ s3_content_bucket_name }}.s3.{{ aws_region }}.amazonaws.com/{publication_id}"
 
 
 ########################################
@@ -79,6 +79,7 @@ frontend:
     public_base_url: "{{ frontend_server_host }}"
     database: "mysql://{{ frontend_db_user }}:{{ frontend_db_user_password }}@tcp({{ mysql_host }}:{{ mysql_external_port }})/testfrontend?parseTime=true"
     master_repository: "{{ master_repository }}"
+#    encrypted_repository: "https://{{ s3_content_bucket_name }}.s3.{{ aws_region }}.amazonaws.com/"
     encrypted_repository: "{{ encrypted_repository }}"
     provider_uri: "{{ provider_uri }}"
     right_print: {{ max_prints_allowed }}

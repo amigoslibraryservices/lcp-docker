@@ -1,6 +1,6 @@
 ---
-# Ansible playbook to destroy MySQL/MariaDB server resources
-# in a Docker container
+# Ansible playbook to destroy container, volume, and S3 resources
+# associated with the LCP stack deployment
 
 - name: Remove the demo LCP stack resources
   hosts: localhost
@@ -13,22 +13,17 @@
   tasks:
 # Do I need a human confirmation before proceeding?
 
-# Manual shutdown/remove if compose task below doesn't work
-#    - name: Remove the LCP containers
-#      docker_container:
-#        name: "docker_{{ item }}_1"
-#        state: absent
-#      loop:
-#        - lcpserver
-#        - lcpencrypt
-#        - lsdserver
-#        - testfrontend
-#        - sftp
+    - name: Check that the docker-compose.yml exists
+      stat:
+        path: docker-compose.yml
+      delegate_to: localhost
+      register: stat_result
 
     - name: Remove allocated Docker resources from the compose file
       docker_compose:
         project_src: "{{ docker_host_lcp_home }}/docker"
         state: absent
+      when: stat_result.stat.exists
 
     - name: Remove the MariaDB-MySQL container
       docker_container:
@@ -76,3 +71,44 @@
       file:
         path: "{{ docker_host_lcp_home }}"
         state: absent
+
+    - name: Block to remove S3 resources if S3 storage is selected
+      block:
+        - name: Remove the content IAM group (and attached user)
+          iam_group:
+            name: "{{ s3_storage_user_group_name }}"
+            purge_users: true
+            state: absent
+
+        - name: Remove the IAM group S3 bucket/folder access policy
+          iam_managed_policy:
+            policy_name: "{{ s3_storage_policy_name }}"
+            policy_description: "{{ s3_storage_policy_description }}"
+            policy: "{{ lookup('template', 'templates/s3-group-access-policy.json.j2') }}"
+            state: absent
+
+        - name: Remove content S3 storage bucket
+          aws_s3:
+            region: "{{ aws_region }}"
+            bucket: "{{ s3_content_bucket_name }}"
+            mode: delete
+
+        - name: Remove IAM user
+          iam:
+            iam_type: user
+            name: "{{ iam_user_name }}"
+            state: absent
+
+        - name: Blank user key to store
+          set_fact:
+            iam_user_key: ""
+        - name: Blank user secret to store
+          set_fact:
+            iam_user_secret: ""
+
+        - name: Copy programmatic blank user credentials to local file
+          template:
+            src: roles/create_iam_user/templates/iam_user_credentials.yml.j2
+            dest: "{{ iam_user_credentials_file }}"
+          delegate_to: localhost
+      when: storage_mode == 's3'

@@ -1,0 +1,4 @@
+This is just a test file to be certain uploads work given the IAM user credentials created in the deployment play.
+
+There's nothing important here. It's just a test.
+

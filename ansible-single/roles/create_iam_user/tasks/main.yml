@@ -1,0 +1,29 @@
+---
+# Role to create an AWS IAM user
+# Two variable values MUST be supplied to the role:
+#   - iam_user_name  (name of IAM user)
+#   - iam_user_credentials_file  (path/name of file in which to store credentials)
+
+- name: Create new IAM user with API keys
+  iam:
+    iam_type: user
+    name: "{{ iam_user_name }}"
+    state: present
+    access_key_state: create
+  register: user_result
+
+- name: Parse user key to store
+  set_fact:
+    iam_user_key: "{{ user_result.user_meta.access_keys[0].access_key_id }}"
+- name: Parse user secret to store
+  set_fact:
+    iam_user_secret: "{{ user_result.user_meta.access_keys[0].secret_access_key }}"
+
+# Record the key somewhere. Will it be stored on the EC2 host?
+# If I can, perhaps easiest is creating a Postgres SQL
+# statement to create the S3 Storage integration outside the CM.
+- name: Copy programmatic user key to local file
+  template:
+    src: templates/iam_user_credentials.yml.j2
+    dest: "{{ iam_user_credentials_file }}"
+  delegate_to: localhost
