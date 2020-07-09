@@ -15,7 +15,7 @@
 
     - name: Check that the docker-compose.yml exists
       stat:
-        path: docker-compose.yml
+        path: "{{ docker_host_lcp_home }}/docker/docker-compose.yml"
       delegate_to: localhost
       register: stat_result
 
@@ -99,16 +99,9 @@
             name: "{{ iam_user_name }}"
             state: absent
 
-        - name: Blank user key to store
-          set_fact:
-            iam_user_key: ""
-        - name: Blank user secret to store
-          set_fact:
-            iam_user_secret: ""
-
-        - name: Copy programmatic blank user credentials to local file
-          template:
-            src: roles/create_iam_user/templates/iam_user_credentials.yml.j2
-            dest: "{{ iam_user_credentials_file }}"
-          delegate_to: localhost
+        - name: Remove programmatic user credentials file
+          file:
+            path: "{{ iam_user_credentials_file }}"
+            state: absent
+          delegate_to: localhost          
       when: storage_mode == 's3'

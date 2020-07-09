@@ -1,6 +1,8 @@
 docker-compose.yaml
 config.yaml
 local_deploy.yml
+s3-group-access-policy.json
+se_iam_user.yml
 *.retry
 test*
 notes*
