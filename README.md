@@ -87,7 +87,6 @@ For local testing you'll need to adjust your [hosts file](/etc/hosts) and add th
 ```
 127.0.0.1 testfrontend
 ```
-It's required because `testfrontend` host name is used in the front-end source code.
 
 After that access the front-end in a web browser using the following address:
 ```bash
