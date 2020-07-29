@@ -40,26 +40,23 @@ If the SFTP service is used, the question arises regarding how the system will k
 
 1. Clone this repository.
 2. Change directories into the `base-local` directory.
-3. Determine whether to store encrypted files on the local file system or in AWS S3 (*hint: for this initial version, choose filesystem*).
-4. Copy the proper files based on the storage selection; for example:
+3. Adjust if needed values in [.env file](./env)
+4. Determine whether to store encrypted files on the local file system or in AWS S3 (*hint: for this initial version, choose filesystem*).
+5. Copy the proper files based on the storage selection; for example:
     ```bash
     cp docker-compose.yaml.fs docker-compose.yaml
-    cp files/etc/config.yaml.fs files/etc/config.yaml
+    cp etc/config.yaml.fs etc/config.yaml
     ```
-5. Edit the IP address hard-coded in the docker-compose.yaml file to match that of your local host. Also review the port numbers and the passwords provided and change if needed.
 6. When ready, run the Docker Compose command in the base-local directory to instantiate the Docker stack:
     ```bash
     sudo docker-compose up -d
     ```
-7. When the containers are built and deployed, the database is empty; import the database schemas:
+7. Wait till the database starts and is ready to connect to using the following command:
     ```bash
-    sudo ./populate_mysql_databases.sh
+    docker-compose logs -f database
     ```
-    If you execute this command fairly soon after the `docker-compose` command, the MySQL service may not have completed starting up. (Startup takes a full two minutes on our test system.) In this case, you should see some "waiting" and error messages until the service is available to receive SQL queries. Once available, the script will create databases, download and import schemas, and create a user with full privileges on the databases.
-
-8. Although the LCP containers were started in step 6, they failed because there was no database configured. Now that the database is available, shut down the services, then bring them back up so the LCP services can log into the database. The order in which the containers is started is important. The database container must be started and operational before the lcpserver, lsdserver, and testfrontend containers are started. Using `docker-compose restart` has not resulted in a good startup order for us; performing separate down and up operations has resulted in a functional order. 
+8. After the database is fully up and ready restart `lcpserver`, `lsdserver`, and `testfrontend`:
     ```bash
-    sudo docker-compose down
     sudo docker-compose up -d
     ```
 Once the services are started, the system should be active.
@@ -67,7 +64,7 @@ Once the services are started, the system should be active.
 ### To Access a Command Line ###
 If you happen to need to access a command inside one of the LCP containers, issue the following Docker command (for example):
 ```bash
-sudo docker exec -it base-local_testfrontend_1 /bin/ash
+docker-compose exec testfrontend /bin/ash
 ```
 Note: The containers are built using the alpine base image, which uses the Ash shell instead of Bash.
 
@@ -81,15 +78,23 @@ sudo docker ps -a
 ```
 If any of the LCP containers have *Exited*, then execute a command to list the logs for the failed container:
 ```bash
-sudo docker logs base-local_lcpserver_1
+docker-compose logs lcpserver
 ```
 This should present an error or condition indicating why the container exited. If all of the containers are running, you should be good to proceed.
 
 ### Upload a Book via the Front-end ###
-Enter the front-end's web interface. Given the default values we coded in the docker-compose.yaml file, enter:
-```bash
-http://192.168.1.253:8991
+For local testing you'll need to adjust your [hosts file](/etc/hosts) and add the following string there:
 ```
+127.0.0.1 testfrontend
+```
+It's required because `testfrontend` host name is used in the front-end source code.
+
+After that access the front-end in a web browser using the following address:
+```bash
+http://localhost:8991
+```
+NOTE: the port might be different, please refer to [.env file](./base-local/.env) for the correct value
+
 You will receive a notice that the front-end app (a simple Node.js app) is loading. Once the interface is displayed, upload a book and add a user.
 1. Click the *Publications* menu item
 2. Click *Add a Publication*
