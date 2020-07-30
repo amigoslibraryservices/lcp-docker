@@ -7,3 +7,4 @@ se_iam_user.yml
 test*
 notes*
 issues*
+.env
