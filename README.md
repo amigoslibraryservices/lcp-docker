@@ -42,10 +42,11 @@ If the SFTP service is used, the question arises regarding how the system will k
 2. Change directories into the `base-local` directory.
 3. Adjust if needed values in [.env file](./env)
 4. Determine whether to store encrypted files on the local file system or in AWS S3 (*hint: for this initial version, choose filesystem*).
-5. Copy the proper files based on the storage selection; for example:
+5. Copy the proper files based on the storage selection and adjust their content if required; for example:
     ```bash
     cp docker-compose.yaml.fs docker-compose.yaml
     cp etc/config.yaml.fs etc/config.yaml
+    cp .env.default .env
     ```
 6. When ready, run the Docker Compose command in the base-local directory to instantiate the Docker stack:
     ```bash
@@ -53,9 +54,9 @@ If the SFTP service is used, the question arises regarding how the system will k
     ```
 7. Wait till the database starts and is ready to connect to using the following command:
     ```bash
-    docker-compose logs -f database
+    sudo docker-compose logs database
     ```
-8. After the database is fully up and ready restart `lcpserver`, `lsdserver`, and `testfrontend`:
+8. Although the LCP containers were started in step 6, they failed because there was no database configured. Now that the database is available, restart `lcpserver`, `lsdserver`, and `testfrontend`:
     ```bash
     sudo docker-compose up -d
     ```
