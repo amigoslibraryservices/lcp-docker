@@ -65,7 +65,7 @@ Once the services are started, the system should be active.
 ### To Access a Command Line ###
 If you happen to need to access a command inside one of the LCP containers, issue the following Docker command (for example):
 ```bash
-docker-compose exec testfrontend /bin/ash
+sudo docker-compose exec testfrontend /bin/ash
 ```
 Note: The containers are built using the alpine base image, which uses the Ash shell instead of Bash.
 
@@ -79,7 +79,7 @@ sudo docker ps -a
 ```
 If any of the LCP containers have *Exited*, then execute a command to list the logs for the failed container:
 ```bash
-docker-compose logs lcpserver
+sudo docker-compose logs lcpserver
 ```
 This should present an error or condition indicating why the container exited. If all of the containers are running, you should be good to proceed.
 
