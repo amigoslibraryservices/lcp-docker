@@ -2,6 +2,7 @@ docker-compose.yaml
 config.yaml
 local_deploy.yml
 s3-group-access-policy.json
+s3-public-read-access.json
 se_iam_user.yml
 *.retry
 test*
