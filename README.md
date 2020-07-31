@@ -40,23 +40,33 @@ If the SFTP service is used, the question arises regarding how the system will k
 
 1. Clone this repository.
 2. Change directories into the `base-local` directory.
-3. Adjust if needed values in [.env file](./env)
-4. Determine whether to store encrypted files on the local file system or in AWS S3 (*hint: for this initial version, choose filesystem*).
-5. Copy the proper files based on the storage selection and adjust their content if required; for example:
+3. Determine whether to store encrypted files on the local file system or in AWS S3 (*hint: for this initial version, choose filesystem: fs*).
+4. Copy the proper files based on the storage selection and adjust their content if required; for example:
     ```bash
     cp docker-compose.yaml.fs docker-compose.yaml
     cp etc/config.yaml.fs etc/config.yaml
     cp .env.default .env
     ```
-6. When ready, run the Docker Compose command in the base-local directory to instantiate the Docker stack:
+    To use S3 storage instead, copy these files:
+    ```bash
+    cp docker-compose.yaml.s3 docker-compose.yaml
+    cp etc/config.yaml.s3 etc/config.yaml
+    cp .env.default .env
+    ```    
+5. Adjust values in the [.env](./env) file as needed. If you choose to use S3 storage, change the values in lines 1-5 to suit your implementation. Leave the values in lines 7-9 empty; the helper script in the next step will fill those in for you. All other default values will work for simple testing.
+6. If you choose to use S3 storage, you can set up all the required S3 resources (including an IAM user with write privileges) by executing the following command:
+    ```bash
+    sudo ./add_s3_resources.sh
+    ```
+7. When ready, run the Docker Compose command in the base-local directory to instantiate the Docker stack:
     ```bash
     sudo docker-compose up -d
     ```
-7. Wait till the database starts and is ready to connect to using the following command:
+8. Wait till the database starts and is ready to connect to using the following command:
     ```bash
     sudo docker-compose logs database
     ```
-8. Although the LCP containers were started in step 6, they failed because there was no database configured. Now that the database is available, restart `lcpserver`, `lsdserver`, and `testfrontend`:
+9. Although the LCP containers were started in step 7, they will have failed because there the database server was not yet ready. Now that the database is available, restart `lcpserver`, `lsdserver`, and `testfrontend`:
     ```bash
     sudo docker-compose up -d
     ```
@@ -114,3 +124,10 @@ You will receive a notice that the front-end app (a simple Node.js app) is loadi
 ### Download and Read an LCP-Encrypted Ebook ###
 
 *TODO: Future iterations to add an OPDS feed to present a catalog for use in Thorium Reader or other LCP-compliant reader.*
+
+## Delete LCP Resources When Finished ##
+If you've used this repository to test LCP, and have finished with the services, we've provided a set of scripts to automate the removal of the resources created. The scripts also return files to their pre-configuration state. You only need to run the second script if you've chosen to use S3 storage for the project.
+```bash
+sudo ./destroy_lcp_resources.sh
+sudo ./destroy_s3_resources.sh
+```

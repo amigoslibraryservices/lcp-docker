@@ -3,6 +3,7 @@ config.yaml
 local_deploy.yml
 s3-group-access-policy.json
 s3-public-read-access.json
+aws_credentials
 se_iam_user.yml
 *.retry
 test*
