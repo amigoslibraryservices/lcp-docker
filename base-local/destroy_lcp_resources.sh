@@ -9,7 +9,7 @@ echo "Removing Docker volumes..."
 
 # Get current directory name, which is a prefix of the Docker volume names
 DIR_PATH=$(dirname "$(readlink -f "$0")")
-PREFIX=$(basename $DIR_PATH)
+PREFIX=$(basename "$DIR_PATH")
 DBDATA=$PREFIX"_dbdata"
 ENCFILES=$PREFIX"_encfiles"
 RAWFILES=$PREFIX"_rawfiles"
