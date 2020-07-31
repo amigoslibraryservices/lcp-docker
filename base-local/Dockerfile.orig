@@ -31,7 +31,6 @@ COPY --from=builder /usr/bin/envsubst /usr/bin/envsubst
 COPY --from=builder /opt/readium /opt/readium
 COPY etc /etc/readium
 
-COPY files/aws_credentials /root/.aws/credentials
 ENV READIUM_LCPSERVER_CONFIG /etc/readium/config.yaml
 ENV READIUM_PUBLIC_HOST 0.0.0.0
 ENV READIUM_PRIVATE_HOST 127.0.0.1
@@ -65,7 +64,6 @@ ENTRYPOINT ["watchmedo", "tricks-from", "/opt/readium/files/raw/watcher.yaml"]
 FROM base AS lcpserver
 
 COPY --from=builder /go/bin/lcpserver /go/bin/lcpserver
-COPY files/aws_credentials /root/.aws/credentials
 ENV READIUM_LCPSERVER_CONFIG=/etc/readium/config.yaml
 CMD ["sh", "-c", "envsubst < /etc/readium/config.yaml > /tmp/config.yaml && mv /tmp/config.yaml /etc/readium/config.yaml; /go/bin/lcpserver"]
 

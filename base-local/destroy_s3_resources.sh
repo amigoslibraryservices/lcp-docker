@@ -24,6 +24,10 @@ sed -i $'/POLICY_ARN/c\\\nAWS_S3_WRITE_POLICY_ARN=\'\'\n' .env
 sed -i $'/S3_KEY/c\\\nAWS_S3_KEY=\'\'\n' .env
 sed -i $'/S3_SECRET/c\\\nAWS_S3_SECRET=\'\'\n' .env
 
+# Remove AWS credentials file
+rm files/aws_credentials
+rm Dockerfile
+mv Dockerfile.orig Dockerfile
 
 # Then remove S3 bucket and all included objects
 aws s3api delete-bucket --bucket $READIUM_CONTENT_S3_BUCKET --region $AWS_REGION

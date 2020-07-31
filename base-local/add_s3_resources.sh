@@ -35,3 +35,12 @@ USER_KEY=$(echo $KEY_RESULT | jq -r '.AccessKey.AccessKeyId')
 USER_SECRET=$(echo $KEY_RESULT | jq -r '.AccessKey.SecretAccessKey')
 sed -i "s/S3_KEY=''/S3_KEY='$USER_KEY'/g" .env
 sed -i "s#S3_SECRET=''#S3_SECRET='$USER_SECRET'#g" .env
+
+# Create AWS credentials file for LCP user
+cp files/credentials.default files/aws_credentials
+sed -i "s/KEYID/$USER_KEY/g" files/aws_credentials
+sed -i "s#ACCESSKEY#$USER_SECRET#g" files/aws_credentials
+
+# Create new Dockerfile with command to copy the credentials into the lcpserver image
+cp Dockerfile Dockerfile.orig
+sed -i '/READIUM_LCPSERVER_CONFIG/i COPY files/aws_credentials /root/.aws/credentials' Dockerfile
