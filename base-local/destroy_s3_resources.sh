@@ -26,9 +26,11 @@ sed -i $'/S3_SECRET/c\\\nAWS_S3_SECRET=\'\'\n' .env
 
 # Remove AWS credentials file
 rm files/aws_credentials
-rm Dockerfile
-mv Dockerfile.orig Dockerfile
+if [ -f "Dockerfile.orig" ]; then
+  rm Dockerfile
+  mv Dockerfile.orig Dockerfile
+fi
 
-# Then remove S3 bucket and all included objects
-aws s3api delete-bucket --bucket $READIUM_CONTENT_S3_BUCKET --region $AWS_REGION
+# Then remove S3 bucket and contents (only if versioning is turned off; otherwise need additional tasks)
+aws s3 rb s3://$READIUM_CONTENT_S3_BUCKET --force
 rm files/s3-public-read-access.json
