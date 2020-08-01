@@ -10,3 +10,4 @@ test*
 notes*
 issues*
 .env
+*.orig
