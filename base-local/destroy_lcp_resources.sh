@@ -28,4 +28,15 @@ docker rmi readium/lcpencrypt:working
 docker rmi atmoz/sftp:alpine
 docker rmi mariadb:latest
 
+echo "Resetting config file"
+# Load env values to test which config file to restore ()
+. .env
+# Reset config.yaml file to initial version with ENV refs (with ./etc bind-mount, 
+# ENV refs were changed to hard-coded values)
+if [ -z "$AWS_S3_USER" ]; then
+  cp etc/config.yaml.fs etc/config.yaml
+else
+  cp etc/config.yaml.s3 etc/config.yaml
+fi
+
 echo "Resources removed successfully."
