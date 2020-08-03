@@ -24,7 +24,7 @@ services:
     build: ./database
     image: database
     ports:
-      - "${READIUM_DATABASE_PORT}:3306"
+      - "${READIUM_DATABASE_EXTERNAL_PORT}:${READIUM_DATABASE_PORT}"
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${READIUM_DATABASE_PASSWORD}"
@@ -34,7 +34,7 @@ services:
   sftp:
     image: "atmoz/sftp:alpine"
     ports:
-      - "${READIUM_SFTP_PORT}:22"
+      - "${READIUM_SFTP_EXTERNAL_PORT}:${READIUM_SFTP_PORT}"
     volumes:
       - "./files/users.conf:/etc/sftp/users.conf:ro"
       - "rawfiles:/home"
@@ -56,7 +56,7 @@ services:
       context: .
       target: "lcpserver"
     ports:
-      - "${READIUM_LCPSERVER_PORT}:8989"
+      - "${READIUM_LCPSERVER_EXTERNAL_PORT}:${READIUM_LCPSERVER_PORT}"
     volumes:
       - "encfiles:/opt/readium/files/encrypted"
       - "./etc:/etc/readium"
@@ -70,7 +70,7 @@ services:
       context: .
       target: "lsdserver"
     ports:
-      - "${READIUM_LSDSERVER_PORT}:8990"
+      - "${READIUM_LSDSERVER_EXTERNAL_PORT}:${READIUM_LSDSERVER_PORT}"
     volumes:
       - "./etc:/etc/readium"
     depends_on:
@@ -83,7 +83,7 @@ services:
       context: .
       target: "testfrontend"
     ports:
-      - "${READIUM_FRONTEND_PORT}:8991"
+      - "${READIUM_FRONTEND_EXTERNAL_PORT}:${READIUM_FRONTEND_PORT}"
     volumes:
       - "encfiles:/opt/readium/files/encrypted"
       - "rawfiles:/opt/readium/files/raw"
