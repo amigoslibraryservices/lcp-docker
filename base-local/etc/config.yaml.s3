@@ -27,8 +27,8 @@ storage:
   mode: "s3"
   bucket: "${READIUM_CONTENT_S3_BUCKET}"
   region: "${AWS_REGION}"
-  access_id: "${AWS_S3_USER}"
-  secret: "${AWS_S3_KEY}"
+  access_id: "${AWS_S3_KEY}"
+  secret: "${AWS_S3_SECRET}"
 certificate:
   cert: "/etc/readium/certificate.pub"
   private_key: "/etc/readium/certificate.pem"
