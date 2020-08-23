@@ -28,8 +28,8 @@ storage:
   endpoint: http://minio:9000
   bucket: "${READIUM_CONTENT_S3_BUCKET}"
   region: "${AWS_REGION}"
-  access_id: "${AWS_S3_USER}"
-  secret: "${AWS_S3_KEY}"
+  access_id: "${AWS_S3_KEY}"
+  secret: "${AWS_S3_SECRET}"
   disable_ssl: true
   path_style: true
   token:

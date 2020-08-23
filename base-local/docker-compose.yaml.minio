@@ -22,6 +22,7 @@ x-app: &default-app
     - "AWS_REGION=${AWS_REGION}"
     - "AWS_S3_USER=${AWS_S3_USER}"
     - "AWS_S3_KEY=${AWS_S3_KEY}"
+    - "AWS_S3_SECRET=${AWS_S3_SECRET}"
 
 services:
   database:
@@ -99,8 +100,8 @@ services:
   minio:
     image: minio/minio
     environment:
-      - "MINIO_ACCESS_KEY=${AWS_S3_USER}"
-      - "MINIO_SECRET_KEY=${AWS_S3_KEY}"
+      - "MINIO_ACCESS_KEY=${AWS_S3_KEY}"
+      - "MINIO_SECRET_KEY=${AWS_S3_SECRET}"
     ports:
       - "9000:9000"
     command: ["server", "/data"]
