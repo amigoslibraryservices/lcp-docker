@@ -36,7 +36,7 @@ license:
   links:
     status: "${READIUM_LSDSERVER_HOST}/licenses/{license_id}/status"
     hint: "${READIUM_FRONTEND_HOST}/static/hint.html"
-    publication: "${READIUM_LCPSERVER_HOST}/contents/{publication_id}"
+    publication: "https://${READIUM_CONTENT_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/{publication_id}"
 
 
 # LSD Server
