@@ -40,7 +40,7 @@ license:
   links:
     status: "${READIUM_LSDSERVER_HOST}/licenses/{license_id}/status"
     hint: "${READIUM_FRONTEND_HOST}/static/hint.html"
-    publication: "${READIUM_LCPSERVER_HOST}/contents/{publication_id}"
+    publication: "http://minio:9000/${READIUM_CONTENT_S3_BUCKET}/publication_id}"
 
 
 # LSD Server
