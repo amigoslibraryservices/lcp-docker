@@ -1,6 +1,7 @@
 version: "3.6"
 
 x-app: &default-app
+  restart: always
   environment:
     - "READIUM_DATABASE_HOST=${READIUM_DATABASE_HOST}"
     - "READIUM_DATABASE_PORT=${READIUM_DATABASE_PORT}"
@@ -28,9 +29,9 @@ services:
   database:
     build: ./database
     image: database
+    restart: always
     ports:
       - "${READIUM_DATABASE_EXTERNAL_PORT}:${READIUM_DATABASE_PORT}"
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${READIUM_DATABASE_PASSWORD}"
     volumes:
@@ -38,6 +39,7 @@ services:
 
   sftp:
     image: "atmoz/sftp:alpine"
+    restart: always
     ports:
       - "${READIUM_SFTP_EXTERNAL_PORT}:${READIUM_SFTP_PORT}"
     volumes:

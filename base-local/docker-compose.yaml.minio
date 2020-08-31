@@ -1,6 +1,7 @@
 version: "3.6"
 
 x-app: &default-app
+  restart: always
   environment:
     - "READIUM_DATABASE_HOST=${READIUM_DATABASE_HOST}"
     - "READIUM_DATABASE_PORT=${READIUM_DATABASE_PORT}"
